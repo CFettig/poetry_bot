@@ -1,7 +1,6 @@
 import os
 from bs4 import BeautifulSoup, SoupStrainer
 import requests
-import re
 import discord
 from dotenv import load_dotenv
 import random
