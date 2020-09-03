@@ -1,42 +1,36 @@
 import os
-# from bs4 import BeautifulSoup, SoupStrainer
-import lxml.html
-import urllib.request
-# import httplib2
+from bs4 import BeautifulSoup, SoupStrainer
+import requests
+import re
 import discord
 from dotenv import load_dotenv
 import random
 
-def get_content(link):
+def extract_poem(link):
     return str(link)
 
-def get_poem(sort_by):
+def get_all_links():
     poems = []
+    url = 'https://rpo.library.utoronto.ca/poems'
 
-    with urllib.request.urlopen('https://www.poetryfoundation.org/poems/browse#page=1&sort_by=' + sort_by + '&preview=1') as url:
-        page = lxml.html.fromstring(url.read())
+    req = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+    soup = BeautifulSoup(req.text, 'html.parser')
 
-        for link in page.xpath('//a/@href'):
-            poems.append(link)
+    for res in soup.findAll("a"):
+
+        link = res.attrs.get("href")
+        if link and '/poems/' in link:
+            poems.append("https://rpo.library.utoronto.ca" + link)
     
-    # http = httplib2.Http()
-    # status, response = http.request('https://www.poetryfoundation.org/poems/browse#page=1&sort_by=' + sort_by + '&preview=1')
-    # for link in BeautifulSoup(response, parse_only=SoupStrainer('a')):
-    #     poems.append(link['href'])
-        # if link.has_key('href'):
-        #     poems.append(link['href'])
-    return get_content(poems[random.randrange(len(poems) - 1)])
+    return extract_poem(poems[random.randrange(len(poems))])
 
 
 class MyClient(discord.Client):
     async def on_message(self, message):
         if message.author.id == self.user.id:
             return
-        # if message.content.startswith('!random_poem'):
-        if message.content.startswith('a'):
-            sort_by = 'name'
-            await message.channel.send("Here's a poem for you!")
-            await message.channel.send(get_poem(sort_by))
+        if message.content.startswith('!poem'):
+            await message.channel.send("Here's a poem for you! <" + get_all_links() + ">")
 
 def main():
     load_dotenv()
